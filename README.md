@@ -106,6 +106,30 @@ Label 0-n ... 0-m Item
 
 Mire kell figyelni?
 
+## Answer
+
+a) as the exercise stated the query is already using joins, so the typical JPA illness of running too many queries to fetch the needed data can be ruled out (loading a folder with N items would result in N+1 queries without joining). In my solution i achieve this by having LAZY fetch mode for all mapped relations but also having a JPQL query in FolderRepository.loadAllFolders that prescribes doing a join fetch. With this the advantages of lazy loading and batch loading can be combined as needed, depending on the use case.
+
+Knowing this the most likely root cause will be not having sufficient indexes on the child tables. To identify the Items of a Folder, Items will most likely have a folder_id and to identify the Properties of an Item, Properties will most likely have an item_id. Not having an index on these item.folder_id and peroperty.item_id will result in doing full table scans on the item and property tables which can be a performance killer.
+
+In case if the indexes are there, but the performance is still poor then the 2 most likely reasons are:
+1) the index does not fit into memory still requiring disc scan. While an index is much smaller than the table this can still be significant if there is a lot of data. Handling this will be engine dependent - e.g. on Sybase indexes are stored in separate memory pools the size of which can be increased if there is enough RAM in the machine (if scaling up is not possible then scaling out is needed)
+2) the index needs to be rebuilt (typical Sybase illness - afaik MS Sql has laready solved this)
+
+In general most RDBMS does support generating query plans along with cost estimates. i would use this to see if the indexes are indeed being picked up and what the estimated cost is.
+
+b)
+
+For the annotated classes please refer to the classes under package unyat.salgot.dao.question3
+The DB schema can be found under db/changelog/001-question3-schema.sql
+
+In general with N-M relations the usual mistake is making the fetch mode EAGER as that will result in loading entities repeatedly from both sides of the relation potentially loading a huge number of entities. Even worse depending on the data size and DB latency and performance this might remain hidden in lower level envs only being noticed later in the process. This is why by default for N-M relations the fetch mode is LAZY (so it is also for OneToMany).
+
+Also when using @ManyToMany deleting is not trivial: the owner of the relation is the entity NOT having the mappedBy clause. In our case this means deleting an Item entity will result in also deleting the rows in ITEM_LABEL. But deleting a Label needs deleting all the references from Items otherwise data consistency would be violated.
+
+Because of the later, modeling N-M relations as 2 1-M relation making the relation itself an entity can be more beneficial as in that case this relation entity can be deleted on its own right e.g. from JPQL or via cascading deletes from parent entities to the relation entity.
+
+
 Programozási feladat:
 
  
