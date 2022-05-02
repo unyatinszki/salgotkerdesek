@@ -1,4 +1,4 @@
-package unyat.salgot.dao.question3;
+package unyat.salgot.question3.dao;
 
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -7,9 +7,7 @@ import org.hibernate.annotations.Fetch;
 import org.hibernate.annotations.FetchMode;
 
 import javax.persistence.*;
-import java.util.ArrayList;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Set;
 
 @Entity

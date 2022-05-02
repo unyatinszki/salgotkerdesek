@@ -1,4 +1,4 @@
-package unyat.salgot.dao.question3;
+package unyat.salgot.question3.dao;
 
 import lombok.Getter;
 import lombok.NoArgsConstructor;

@@ -1,4 +1,4 @@
-package unyat.salgot;
+package unyat.salgot.question4;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;

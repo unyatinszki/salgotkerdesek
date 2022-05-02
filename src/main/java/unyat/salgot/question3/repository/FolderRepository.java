@@ -1,8 +1,8 @@
-package unyat.salgot.repository.question3;
+package unyat.salgot.question3.repository;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
-import unyat.salgot.dao.question3.Folder;
+import unyat.salgot.question3.dao.Folder;
 
 import java.util.Collection;
 

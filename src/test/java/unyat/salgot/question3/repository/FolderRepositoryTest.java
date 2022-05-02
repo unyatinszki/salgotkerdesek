@@ -1,12 +1,12 @@
-package unyat.salgot.repository.question3;
+package unyat.salgot.question3.repository;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
-import unyat.salgot.dao.question3.Folder;
-import unyat.salgot.dao.question3.Item;
-import unyat.salgot.dao.question3.Label;
-import unyat.salgot.dao.question3.Property;
+import unyat.salgot.question3.dao.Folder;
+import unyat.salgot.question3.dao.Item;
+import unyat.salgot.question3.dao.Label;
+import unyat.salgot.question3.dao.Property;
 
 import java.util.Arrays;
 

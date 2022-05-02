@@ -120,17 +120,17 @@ In general most RDBMS does support generating query plans along with cost estima
 
 b)
 
-For the annotated classes please refer to the classes under package unyat.salgot.dao.question3
+For the annotated classes please refer to the classes under package unyat.salgot.question3.dao
 The DB schema can be found under db/changelog/001-question3-schema.sql
 
 In general with N-M relations the usual mistake is making the fetch mode EAGER as that will result in loading entities repeatedly from both sides of the relation potentially loading a huge number of entities. Even worse depending on the data size and DB latency and performance this might remain hidden in lower level envs only being noticed later in the process. This is why by default for N-M relations the fetch mode is LAZY (so it is also for OneToMany).
 
-Also when using @ManyToMany deleting is not trivial: the owner of the relation is the entity NOT having the mappedBy clause. In our case this means deleting an Item entity will result in also deleting the rows in ITEM_LABEL. But deleting a Label needs deleting all the references from Items otherwise data consistency would be violated.
+Also when using @ManyToMany deleting is not trivial: the owner of the relation is the entity NOT having the mappedBy clause. In our case this means deleting an Item entity will result in also deleting the rows in ITEM_LABEL. But deleting a Label needs deleting all the references from Items otherwise data consistency would be violated (and an SQLException would be thrown).
 
 Because of the later, modeling N-M relations as 2 1-M relation making the relation itself an entity can be more beneficial as in that case this relation entity can be deleted on its own right e.g. from JPQL or via cascading deletes from parent entities to the relation entity.
 
 
-Programozási feladat:
+# Programozási feladat:
 
  
 
@@ -209,3 +209,28 @@ Response Body:
 }]
 
 }
+
+## Answer
+
+The solution can be found under package unyat.salgot.question4
+
+Notes:
+- there is a uniqueness check in place for the name -> a constraint violation will fail the entire request (http 400) also deleting the items those would have been successfully persisted on other threads
+- the format of writing the hash was not specified - i'm using base64 both to save into the DB as well as to return in JSON
+- the main class of the app is unyat.salgot.question4.SalgotApplication
+- using liquibase to spin up the schema and H2 for the purposes of the exercise
+- no authentication and authorization as that was not specified
+- the thread pool size can be configured with item.service.thread.pool.size
+- for the purposes of the exercise i'm logging at INFO level (could be reconsidered for real prod usage)
+- to test via curl:
+Will create 2 items:
+curl -v -X POST -H 'X-Tracking-Id: 456dfghfdgh88' -H 'Content-Type: application/json' -d '{"items":[{"name": "item1", "password": "password123"},{"name": "item2", "password": "password456"}]}' localhost:8080/items
+
+Will dump the 2 items:
+curl -X GET localhost:8080/items
+
+Using the same run running this will fail because of the duplicate item. The non-duplicate item will also be deleted:
+curl -v -X POST -H 'X-Tracking-Id: 456dfghfdgh88' -H 'Content-Type: application/json' -d '{"items":[{"name": "item1", "password": "password123"},{"name": "non-duplicate-item", "password": "password456"}]}' localhost:8080/items
+
+So this will dump the previous 2 items:
+curl -X GET localhost:8080/items
