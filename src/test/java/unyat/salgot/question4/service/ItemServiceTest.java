@@ -3,9 +3,8 @@ package unyat.salgot.question4.service;
 import org.junit.jupiter.api.Test;
 import org.slf4j.MDC;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
 import org.springframework.boot.test.context.SpringBootTest;
-import unyat.salgot.question4.controller.ItemController;
+import unyat.salgot.question4.controller.TrackingIdFilter;
 import unyat.salgot.question4.dto.ItemInput;
 import unyat.salgot.question4.repository.HashedItemRepository;
 
@@ -23,7 +22,7 @@ public class ItemServiceTest {
 
     @Test
     public void testPersistingItems() {
-        MDC.put(ItemController.MDC_TRACKING_ID_NAME, "testTrackingId");
+        MDC.put(TrackingIdFilter.MDC_TRACKING_ID_NAME, "testTrackingId");
         try {
             var input = IntStream
                     .range(0, 200)
