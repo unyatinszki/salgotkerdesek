@@ -9,6 +9,7 @@ import unyat.salgot.question4.dao.HashedItem;
 import unyat.salgot.question4.dto.ItemInput;
 import unyat.salgot.question4.dto.ItemOutput;
 import unyat.salgot.question4.repository.HashedItemRepository;
+import unyat.salgot.question4.util.MDCPropagatingExecutor;
 
 import javax.annotation.PreDestroy;
 import java.nio.charset.StandardCharsets;
@@ -24,14 +25,14 @@ public class ItemService {
     private final Logger logger = LoggerFactory.getLogger(ItemService.class);
     private final HashedItemRepository repository;
 
-    private final ExecutorService threadPool;
+    private final MDCPropagatingExecutor threadPool;
 
     private final MessageDigest digest;
 
     public ItemService(HashedItemRepository repository, @Value("${item.service.thread.pool.size:10}") int poolSize) {
         logger.info("ItemService instantiated - using thread pool size {}", poolSize);
         this.repository = repository;
-        this.threadPool = Executors.newFixedThreadPool(poolSize);
+        this.threadPool = MDCPropagatingExecutor.of(Executors.newFixedThreadPool(poolSize));
         try {
             digest = MessageDigest.getInstance("SHA-256");
         } catch (NoSuchAlgorithmException e) {
@@ -46,31 +47,24 @@ public class ItemService {
     }
 
     private CompletableFuture<Optional<ItemOutput>> persistItemAsync(ItemInput item) {
-        // need to have a stable reference to the current MDC context to be used in the below closure on thread pool
-        final var currentMDCContext = MDC.getCopyOfContextMap();
         return CompletableFuture.supplyAsync(
                 () -> {
-                    MDC.setContextMap(currentMDCContext);
+                    logger.info("Processing {}", item);
+                    byte[] encodedhash = digest.digest(item.getPassword().getBytes(StandardCharsets.UTF_8));
+                    var base64EncodedHash = Base64.getEncoder().encodeToString(encodedhash);
+                    HashedItem itemEntity = new HashedItem();
+                    itemEntity.setId(UUID.randomUUID().toString());
+                    itemEntity.setName(item.getName());
+                    itemEntity.setPasswordHash(base64EncodedHash);
                     try {
-                        logger.info("Processing {}", item);
-                        byte[] encodedhash = digest.digest(item.getPassword().getBytes(StandardCharsets.UTF_8));
-                        var base64EncodedHash = Base64.getEncoder().encodeToString(encodedhash);
-                        HashedItem itemEntity = new HashedItem();
-                        itemEntity.setId(UUID.randomUUID().toString());
-                        itemEntity.setName(item.getName());
-                        itemEntity.setPasswordHash(base64EncodedHash);
-                        try {
-                            repository.save(itemEntity);
-                            ItemOutput result = new ItemOutput(item.getOrder(), itemEntity.getId(), itemEntity.getName(),
-                                    itemEntity.getPasswordHash());
-                            logger.info("Successfully generated {}", result);
-                            return Optional.of(result);
-                        } catch (RuntimeException e) {
-                            logger.error("Saving item failed", e);
-                            return Optional.empty();
-                        }
-                    } finally {
-                        MDC.clear();
+                        repository.save(itemEntity);
+                        ItemOutput result = new ItemOutput(item.getOrder(), itemEntity.getId(), itemEntity.getName(),
+                                itemEntity.getPasswordHash());
+                        logger.info("Successfully generated {}", result);
+                        return Optional.of(result);
+                    } catch (RuntimeException e) {
+                        logger.error("Saving item failed", e);
+                        return Optional.empty();
                     }
                 }, threadPool);
     }
