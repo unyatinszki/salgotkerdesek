@@ -109,6 +109,7 @@ public class ItemService {
                 .collect(Collectors.toList());
         var noError = successOutputs.size() == items.size();
         if (noError) {
+            logger.info("{} Successfully processed {} items", trackingId, items.size());
             return Optional.of(successOutputs);
         } else {
             // need to clean up - need to delete the writes those were successful
@@ -117,9 +118,10 @@ public class ItemService {
                     repository.deleteById(output.getId());
                 } catch (RuntimeException e) {
                     // catching anything that the repo might throw - at this stage we will return a http 400 anyway
-                    logger.error("Exception while cleaning up after errors", e);
+                    logger.error(trackingId + " Exception while cleaning up after errors", e);
                 }
             }
+            logger.info("{} Error while processing {} items", trackingId, items.size());
             return Optional.empty();
         }
     }
